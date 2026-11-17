@@ -8,13 +8,13 @@ import {
   sendError,
   type ApiRequestLike,
   type ApiResponseLike,
-} from './http';
+} from './http.js';
 import {
   analyzeEnvironment,
   isTransientOverloadError,
   type AnalyzeEnvironmentInput,
-} from './environment-service';
-import { fetchWeatherAndAirQuality, searchCities } from './weather-service';
+} from './environment-service.js';
+import { fetchWeatherAndAirQuality, searchCities } from './weather-service.js';
 
 export type ApiHandler = (req: ApiRequestLike, res: ApiResponseLike) => Promise<void>;
 

@@ -96,7 +96,8 @@ Project → **Settings → Functions → Fluid compute** = مفعّل.
 استبدل `<your-app>` باسم مشروعك:
 
 - `https://<your-app>.vercel.app/api/health`
-  يجب أن يعرض `"geminiConfigured": true`. لو كانت `false` فالمتغير غير مضاف أو يحتاج Redeploy.
+  يجب أن يعرض `"ok": true` و `"geminiConfigured": true`.
+  لو ظهر خطأ، الحقل `modules` يوضح أي وحدة فشلت وبنص الخطأ الأصلي (هذا أفضل من قراءة اللوجات).
 - `https://<your-app>.vercel.app/api/weather?city=Cairo&lang=ar`
   يجب أن يرجع JSON فيه `location` و `current` و `forecast`.
 - `https://<your-app>.vercel.app/api/cities?q=Cai&lang=en`
@@ -143,6 +144,7 @@ npm run start:prod      # NODE_ENV=production tsx server.ts
 
 | الأعراض | السبب / الحل |
 | --- | --- |
+| `500` مع نص `A server error has occurred` في كل `/api/*` | الدالة تنهار قبل تنفيذ الكود (غالباً مشكلة تحميل وحدة/مسار). افتح `/api/health` — سيعرض اسم الخطأ الحقيقي لكل وحدة |
 | `503` مع رسالة "Gemini API key is not configured" | `GEMINI_API_KEY` غير مضاف أو أضفته بعد آخر نشر → أعد Redeploy |
 | `405 Method Not Allowed` | استدعاء `/api/weather` أو `/api/cities` بـ POST، أو `/api/analyze-environment` بـ GET |
 | `504` أو انتهاء المهلة | فعّل Fluid Compute، وتأكد أن `maxDuration` مضبوط |

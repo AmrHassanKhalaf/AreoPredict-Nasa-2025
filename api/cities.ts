@@ -1,5 +1,5 @@
-import type { ApiRequestLike, ApiResponseLike } from '../lib/http';
-import { citiesHandler } from '../lib/handlers';
+import type { ApiRequestLike, ApiResponseLike } from '../lib/http.js';
+import { citiesHandler } from '../lib/handlers.js';
 
 /**
  * GET /api/cities?q=...&lang=ar|en

@@ -1,7 +1,6 @@
-import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import type { EnvironmentalAnalysis, Language, WeatherData } from '../src/types/weather';
-import { ApiError } from './http';
-import { fetchWeatherAndAirQuality, fetchWeatherApiCurrent } from './weather-service';
+import { ApiError } from './http.js';
+import { fetchWeatherAndAirQuality, fetchWeatherApiCurrent } from './weather-service.js';
 
 export interface AnalyzeEnvironmentInput {
   cityName?: string;
@@ -10,12 +9,28 @@ export interface AnalyzeEnvironmentInput {
   lang?: Language;
 }
 
-function getGeminiClient(): GoogleGenAI | null {
+/**
+ * The Gemini SDK is loaded lazily with a dynamic import:
+ * - the weather/cities functions never pay for it (faster cold starts),
+ * - if the SDK cannot be loaded, only this route fails (and reports why)
+ *   instead of crashing every Serverless Function at startup.
+ */
+type GenAIModule = typeof import('@google/genai');
+type GoogleGenAIClient = InstanceType<GenAIModule['GoogleGenAI']>;
+type GenerateContentRequest = Parameters<GoogleGenAIClient['models']['generateContent']>[0];
+type ResponseSchema = NonNullable<GenerateContentRequest['config']>['responseSchema'];
+type ThinkingLevelValue = GenAIModule['ThinkingLevel'][keyof GenAIModule['ThinkingLevel']];
+
+async function loadGenAI(): Promise<{
+  genai: GenAIModule;
+  client: GoogleGenAIClient;
+} | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
     return null;
   }
-  return new GoogleGenAI({
+  const genai = await import('@google/genai');
+  const client = new genai.GoogleGenAI({
     apiKey,
     httpOptions: {
       headers: {
@@ -23,7 +38,9 @@ function getGeminiClient(): GoogleGenAI | null {
       },
     },
   });
+  return { genai, client };
 }
+
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,16 +57,14 @@ export function isTransientOverloadError(err: unknown): boolean {
   );
 }
 
-type GenerateContentRequest = Parameters<GoogleGenAI['models']['generateContent']>[0];
-type ResponseSchema = NonNullable<GenerateContentRequest['config']>['responseSchema'];
-
 async function generateEnvironmentalWithRetry(
-  ai: GoogleGenAI,
+  ai: GoogleGenAIClient,
+  genai: GenAIModule,
   request: GenerateContentRequest
 ) {
-  const attempts: Array<{ model: string; thinkingLevel?: ThinkingLevel; delayMs: number }> = [
-    { model: 'gemini-4-hydrogen', thinkingLevel: ThinkingLevel.LOW, delayMs: 400 },
-    { model: 'gemini-4-hydrogen', thinkingLevel: ThinkingLevel.LOW, delayMs: 800 },
+  const attempts: Array<{ model: string; thinkingLevel?: ThinkingLevelValue; delayMs: number }> = [
+    { model: 'gemini-4-hydrogen', thinkingLevel: genai.ThinkingLevel.LOW, delayMs: 400 },
+    { model: 'gemini-4-hydrogen', thinkingLevel: genai.ThinkingLevel.LOW, delayMs: 800 },
     { model: 'gemini-3.1-flash-lite', delayMs: 500 },
   ];
   let lastError: unknown;
@@ -95,8 +110,8 @@ export async function analyzeEnvironment(
     );
   }
 
-  const ai = getGeminiClient();
-  if (!ai) {
+  const genaiClient = await loadGenAI();
+  if (!genaiClient) {
     throw new ApiError(
       503,
       language === 'ar'
@@ -104,6 +119,8 @@ export async function analyzeEnvironment(
         : 'Gemini API key is not configured on the server. Add GEMINI_API_KEY in the project environment variables.'
     );
   }
+  const { genai, client: ai } = genaiClient;
+  const { Type } = genai;
 
   // Fetch live WeatherAPI current.json for the user-provided city (appended after q=),
   // and Open-Meteo telemetry in parallel so we always have complete readings.
@@ -244,7 +261,7 @@ Instructions:
     ],
   };
 
-  const response = await generateEnvironmentalWithRetry(ai, {
+  const response = await generateEnvironmentalWithRetry(ai, genai, {
     model: 'gemini-4-hydrogen',
     contents: prompt,
     config: {

@@ -1,5 +1,5 @@
-import type { ApiRequestLike, ApiResponseLike } from '../lib/http';
-import { weatherHandler } from '../lib/handlers';
+import type { ApiRequestLike, ApiResponseLike } from '../lib/http.js';
+import { weatherHandler } from '../lib/handlers.js';
 
 /**
  * GET /api/weather?city=... | ?lat=...&lon=...&days=5&lang=ar|en

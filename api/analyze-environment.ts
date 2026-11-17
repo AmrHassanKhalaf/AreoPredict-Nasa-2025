@@ -1,5 +1,5 @@
-import type { ApiRequestLike, ApiResponseLike } from '../lib/http';
-import { analyzeHandler } from '../lib/handlers';
+import type { ApiRequestLike, ApiResponseLike } from '../lib/http.js';
+import { analyzeHandler } from '../lib/handlers.js';
 
 /**
  * POST /api/analyze-environment

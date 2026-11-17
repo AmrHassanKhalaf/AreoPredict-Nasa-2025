@@ -2,8 +2,8 @@ import express from 'express';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { analyzeHandler, citiesHandler, weatherHandler } from './lib/handlers';
-import { hasCustomWeatherApiKey } from './lib/weather-service';
+import { analyzeHandler, citiesHandler, weatherHandler } from './lib/handlers.js';
+import { hasCustomWeatherApiKey } from './lib/weather-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
