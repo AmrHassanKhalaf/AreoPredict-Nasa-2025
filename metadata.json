@@ -1,0 +1,6 @@
+{
+  "name": "AeroPulse Weather & Air Quality",
+  "description": "Real-time weather forecasts, hourly climate trends, live air quality telemetry, and AI-powered city pollution analysis.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
